@@ -1,14 +1,14 @@
 import express from 'express';
 import {ENV} from './lib/env.js';
 import path from 'path';
-
 import cors from "cors";
-app.use(cors());
 
 
 const app = express();
 
 const __dirname = path.resolve();
+
+app.use(cors());
 
 app.get('/health', (req,res) => {
     res.status(200).json({ msg : "success from backend"});   
