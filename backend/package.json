@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "main": "src/server.js",
   "scripts": {
-    "Ashish": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "start" : "node src/server.js"
   },
   "type": "module",
   "keywords": [],
-  "author": "",
+  "author": "",  
   "license": "ISC",
   "description": "",
   "dependencies": {
