@@ -1,20 +1,22 @@
-import { useEffect } from "react";
+import "./App.css";
+import { SignedOut, SignInButton, UserButton, SignedIn, SignOutButton }from "@clerk/clerk-react";
 
 function App() {
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/health`)
-      .then(res => res.json())
-      .then(data => {
-        console.log("Backend response:", data);
-      })
-      .catch(err => {
-        console.error("Error calling backend:", err);
-      });
-  }, []);
-
   return (
     <div>
-      <h1>Frontend is live</h1>
+      <h1>Welcome to the App</h1>
+
+      <SignedOut>
+        <SignInButton mode="modal">
+          <button >Log In</button>
+        </SignInButton>
+      </SignedOut>
+
+      <SignedIn>
+        <SignOutButton />
+      </SignedIn>
+      <UserButton/>
+
     </div>
   );
 }
