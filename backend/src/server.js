@@ -9,7 +9,16 @@ const app = express();
 
 const __dirname = path.resolve();
 
-app.use(cors());
+app.use(express.json());
+
+// credentials : true to allow cookies to be sent
+app.use(
+  cors({
+    origin: ENV.CLIENT_URL,
+    credentials: true,
+  })
+);
+
 
 app.get('/health', (req,res) => {
     res.status(200).json({ msg : "success from backend"});   
