@@ -3,6 +3,7 @@ import {ENV} from './lib/env.js';
 import path from 'path';
 import cors from "cors";
 import {connectDB} from './lib/db.js';
+import { inngest } from './lib/inngest.js';
 
 
 const app = express();
@@ -19,6 +20,7 @@ app.use(
   })
 );
 
+app.use("/api/inngest", serve({client: inngest, functions}))
 
 app.get('/health', (req,res) => {
     res.status(200).json({ msg : "success from backend"});   
