@@ -6,6 +6,8 @@ import { ENV } from "./lib/env.js";
 import { connectDB } from "./lib/db.js";
 import { inngest, functions } from "./lib/inngest.js";
 import { serve } from "inngest/express";
+import {clerkMiddleware} from "@clerk/express";
+import chatRoutes from "./routes/chatRoutes.js";
 
 const app = express();
 const __dirname = path.resolve();
@@ -19,6 +21,7 @@ app.use(
     credentials: true,
   })
 );
+app.use(clerkMiddleware()); // this adds auth fiels to req object: req.auth 
 
 // Inngest endpoint (VERY IMPORTANT)
 app.use("/api/inngest", serve({ client: inngest, functions }));
@@ -28,9 +31,7 @@ app.get("/health", (req, res) => {
   res.status(200).json({ msg: "api is up and running" });
 });
 
-app.get("/books", (req, res) => {
-  res.status(200).json({ msg: "this is the books endpoint" });
-});
+app.use("/api/chat", chatRoutes);
 
 // start server
 app.listen(ENV.PORT, async () => {
