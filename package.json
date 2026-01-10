@@ -17,5 +17,8 @@
     "url": "https://github.com/ashishgautam484/talent-IQ-mernProject/issues"
   },
   "homepage": "https://github.com/ashishgautam484/talent-IQ-mernProject#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "react-hot-toast": "^2.6.0"
+  }
 }
