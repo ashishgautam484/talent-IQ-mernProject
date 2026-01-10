@@ -2,7 +2,7 @@
 import { SignedOut, SignInButton, UserButton, SignedIn, SignOutButton, useUser }from "@clerk/clerk-react";
 import { Navigate, Route, Routes } from "react-router";
 import HomePage from "./Pages/HomePage";
-import ProblemPage from "./Pages/ProblemPage";
+import ProblemPage from "./Pages/ProblemsPage";
 import DashBoardPage from "./Pages/DashBoardPage";
 import { use } from "react";
 import { Toaster } from "react-hot-toast";
