@@ -4,9 +4,9 @@ import { Navigate, Route, Routes } from "react-router";
 import HomePage from "./Pages/HomePage";
 
 import DashBoardPage from "./Pages/DashBoardPage";
-import ProblemPage from "./pages/ProblemPage";
-import ProblemsPage from "./pages/ProblemsPage";
-import SessionPage from "./pages/SessionPage";
+import ProblemPage from "./Pages/ProblemPage";
+import ProblemsPage from "./Pages/ProblemsPage";
+import SessionPage from "./Pages/SessionPage";
 
 import { use } from "react";
 import { Toaster } from "react-hot-toast";
