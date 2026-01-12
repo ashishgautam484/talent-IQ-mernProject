@@ -19,7 +19,7 @@ app.use(express.json());
 
 app.use(cors({ origin: ENV.CLIENT_URL,credentials: true,
   })
-);
+);                  1
 app.use(clerkMiddleware()); // this adds auth fiels to req object: req.auth 
 
 // Inngest endpoint (VERY IMPORTANT)
