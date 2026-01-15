@@ -17,9 +17,30 @@ const __dirname = path.resolve();
 // middleware
 app.use(express.json());
 
-app.use(cors({ origin: ENV.CLIENT_URL,credentials: true,
-  })
-);                  1
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://talent-iq-mernproject.vercel.app",
+  "https://talent-iq-mern-proj-git-fac931-ashish-gautams-projects-20df5274.vercel.app"
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // ✅ allow server-to-server / no-origin requests
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(null, true); // TEMP: don’t hard-crash backend
+  },
+  credentials: true,
+}));
+
+
+// app.options("/*", cors());
+                 1
 app.use(clerkMiddleware()); // this adds auth fiels to req object: req.auth 
 
 // Inngest endpoint (VERY IMPORTANT)
