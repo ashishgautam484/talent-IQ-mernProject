@@ -1,7 +1,12 @@
 import { useNavigate } from "react-router";
 import { useUser } from "@clerk/clerk-react";
 import { useState } from "react";
-import { useActiveSessions, useCreateSession, useMyRecentSessions } from "../hooks/useSessions";
+import {
+  useActiveSessions,
+  useCreateSession,
+  useMyRecentSessions,
+} from "../hooks/useSessions";
+import { useQueryClient } from "@tanstack/react-query";
 
 import Navbar from "../components/Navbar";
 import WelcomeSection from "../components/WelcomeSection";
@@ -13,13 +18,17 @@ import CreateSessionModal from "../components/CreateSessionModal";
 function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useUser();
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [roomConfig, setRoomConfig] = useState({ problem: "", difficulty: "" });
 
+  const queryClient = useQueryClient();
   const createSessionMutation = useCreateSession();
 
-  const { data: activeSessionsData, isLoading: loadingActiveSessions } = useActiveSessions();
-  const { data: recentSessionsData, isLoading: loadingRecentSessions } = useMyRecentSessions();
+  const { data: activeSessionsData, isLoading: loadingActiveSessions } =
+    useActiveSessions();
+  const { data: recentSessionsData, isLoading: loadingRecentSessions } =
+    useMyRecentSessions();
 
   const handleCreateRoom = () => {
     if (!roomConfig.problem || !roomConfig.difficulty) return;
@@ -31,6 +40,10 @@ function DashboardPage() {
       },
       {
         onSuccess: (data) => {
+          // 🔥 refresh cached queries
+          queryClient.invalidateQueries(["activeSessions"]);
+          queryClient.invalidateQueries(["myRecentSessions"]);
+
           setShowCreateModal(false);
           navigate(`/session/${data.session._id}`);
         },
@@ -42,9 +55,11 @@ function DashboardPage() {
   const recentSessions = recentSessionsData?.sessions || [];
 
   const isUserInSession = (session) => {
-    if (!user.id) return false;
-
-    return session.host?.clerkId === user.id || session.participant?.clerkId === user.id;
+    if (!user?.id) return false;
+    return (
+      session.host?.clerkId === user.id ||
+      session.participant?.clerkId === user.id
+    );
   };
 
   return (
@@ -53,7 +68,6 @@ function DashboardPage() {
         <Navbar />
         <WelcomeSection onCreateSession={() => setShowCreateModal(true)} />
 
-        {/* Grid layout */}
         <div className="container mx-auto px-6 pb-16">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <StatsCards
@@ -67,7 +81,10 @@ function DashboardPage() {
             />
           </div>
 
-          <RecentSessions sessions={recentSessions} isLoading={loadingRecentSessions} />
+          <RecentSessions
+            sessions={recentSessions}
+            isLoading={loadingRecentSessions}
+          />
         </div>
       </div>
 
