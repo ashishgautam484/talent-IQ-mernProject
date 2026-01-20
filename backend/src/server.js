@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import cors from "cors";
+import morgan from 'morgan'
 
 import { ENV } from "./lib/env.js";
 import { connectDB } from "./lib/db.js";
@@ -13,6 +14,8 @@ import sessionRoutes from "./routes/sessionRoutes.js";
 
 const app = express();
 const __dirname = path.resolve();
+
+
 
 // middleware
 app.use(express.json());
@@ -37,6 +40,8 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+app.use(morgan('dev'));
 
 
 // app.options("/*", cors());
