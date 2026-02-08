@@ -23,7 +23,7 @@ app.use(express.json());
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
-  "https://talent-iq-mernproject.vercel.app",
+  "https://talent-iq-mern-project.vercel.app",
   "https://talent-iq-mern-proj-git-fac931-ashish-gautams-projects-20df5274.vercel.app"
 ];
 

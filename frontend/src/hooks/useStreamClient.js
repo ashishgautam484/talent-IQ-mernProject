@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { StreamChat } from "stream-chat";
 import toast from "react-hot-toast";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { initializeStreamClient, disconnectStreamClient } from "../lib/stream";
 import { sessionApi } from "../api/sessions";
 
@@ -10,18 +11,30 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
   const [chatClient, setChatClient] = useState(null);
   const [channel, setChannel] = useState(null);
   const [isInitializingCall, setIsInitializingCall] = useState(true);
+  const { user } = useUser();
+  const { getToken } = useAuth();
 
   useEffect(() => {
-    let videoCall = null;
-    let chatClientInstance = null;
+    if (loadingSession || !session || !user) return;
+
+    // Check if user is participant/host only after session is loaded
+    const isUserHost = session.host?.clerkId === user.id;
+    const isUserParticipant = session.participant?.clerkId === user.id;
+
+    if (!isUserHost && !isUserParticipant) return;
+    if (session.status === "completed") return;
+
+    let videoCall;
+    let chatClientInstance;
 
     const initCall = async () => {
-      if (!session?.callId) return;
-      if (!isHost && !isParticipant) return;
-      if (session.status === "completed") return;
-
+      setIsInitializingCall(true);
       try {
-        const { token, userId, userName, userImage } = await sessionApi.getStreamToken();
+        const token = await getToken();
+        if (!token) throw new Error("Failed to get authentication token");
+
+        const streamTokenData = await sessionApi.getStreamToken(token);
+        const { token: streamToken, userId, userName, userImage } = streamTokenData;
 
         const client = await initializeStreamClient(
           {
@@ -29,7 +42,7 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
             name: userName,
             image: userImage,
           },
-          token
+          streamToken
         );
 
         setStreamClient(client);
@@ -47,7 +60,7 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
             name: userName,
             image: userImage,
           },
-          token
+          streamToken
         );
         setChatClient(chatClientInstance);
 
@@ -62,11 +75,10 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
       }
     };
 
-    if (session && !loadingSession) initCall();
+    initCall();
 
-    // cleanup - performance reasons
     return () => {
-      // iife
+      // iife cleanup
       (async () => {
         try {
           if (videoCall) await videoCall.leave();
@@ -77,7 +89,7 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
         }
       })();
     };
-  }, [session, loadingSession, isHost, isParticipant]);
+  }, [session, loadingSession, user]);
 
   return {
     streamClient,
