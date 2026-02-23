@@ -7,7 +7,7 @@ import { ENV } from "./lib/env.js";
 import { connectDB } from "./lib/db.js";
 import { inngest, functions } from "./lib/inngest.js";
 import { serve } from "inngest/express";
-import {clerkMiddleware} from "@clerk/express";
+import { clerkMiddleware } from "@clerk/express";
 import chatRoutes from "./routes/chatRoutes.js";
 import sessionRoutes from "./routes/sessionRoutes.js";
 
@@ -45,7 +45,7 @@ app.use(morgan('dev'));
 
 
 // app.options("/*", cors());
-                 1
+
 app.use(clerkMiddleware()); // this adds auth fiels to req object: req.auth 
 
 // Inngest endpoint (VERY IMPORTANT)

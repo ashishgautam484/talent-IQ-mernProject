@@ -19,7 +19,7 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
 
     // Check if user is participant/host only after session is loaded
     const isUserHost = session.host?.clerkId === user.id;
-    const isUserParticipant = session.participant?.clerkId === user.id;
+    const isUserParticipant = session.participants?.clerkId === user.id;
 
     if (!isUserHost && !isUserParticipant) return;
     if (session.status === "completed") return;
