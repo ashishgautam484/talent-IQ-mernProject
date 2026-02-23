@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { StreamChat } from "stream-chat";
 import toast from "react-hot-toast";
 import { useAuth, useUser } from "@clerk/clerk-react";
@@ -14,82 +14,101 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
   const { user } = useUser();
   const { getToken } = useAuth();
 
+  // Prevent duplicate initialization and track cleanup references
+  const hasInitializedRef = useRef(false);
+  const cleanupRef = useRef(null);
+
   useEffect(() => {
     if (loadingSession || !session || !user) return;
-
-    // Check if user is participant/host only after session is loaded
-    const isUserHost = session.host?.clerkId === user.id;
-    const isUserParticipant = session.participants?.clerkId === user.id;
-
-    if (!isUserHost && !isUserParticipant) return;
+    if (!isHost && !isParticipant) return;
     if (session.status === "completed") return;
 
-    let videoCall;
-    let chatClientInstance;
+    // Don't re-initialize if already connected for this session
+    if (hasInitializedRef.current) return;
+
+    let cancelled = false;
 
     const initCall = async () => {
       setIsInitializingCall(true);
+      let videoCall;
+      let chatClientInstance;
+
       try {
         const token = await getToken();
-        if (!token) throw new Error("Failed to get authentication token");
+        if (!token || cancelled) return;
 
         const streamTokenData = await sessionApi.getStreamToken(token);
+        if (cancelled) return;
+
         const { token: streamToken, userId, userName, userImage } = streamTokenData;
 
         const client = await initializeStreamClient(
-          {
-            id: userId,
-            name: userName,
-            image: userImage,
-          },
+          { id: userId, name: userName, image: userImage },
           streamToken
         );
+        if (cancelled) return;
 
         setStreamClient(client);
 
         videoCall = client.call("default", session.callId);
         await videoCall.join({ create: true });
+        if (cancelled) return;
         setCall(videoCall);
 
         const apiKey = import.meta.env.VITE_STREAM_API_KEY;
         chatClientInstance = StreamChat.getInstance(apiKey);
 
         await chatClientInstance.connectUser(
-          {
-            id: userId,
-            name: userName,
-            image: userImage,
-          },
+          { id: userId, name: userName, image: userImage },
           streamToken
         );
+        if (cancelled) return;
         setChatClient(chatClientInstance);
 
         const chatChannel = chatClientInstance.channel("messaging", session.callId);
         await chatChannel.watch();
+        if (cancelled) return;
         setChannel(chatChannel);
+
+        hasInitializedRef.current = true;
+
+        // Store references for cleanup on unmount
+        cleanupRef.current = { videoCall, chatClientInstance };
       } catch (error) {
-        toast.error("Failed to join video call");
-        console.error("Error init call", error);
+        if (!cancelled) {
+          toast.error("Failed to join video call");
+          console.error("Error init call", error);
+        }
       } finally {
-        setIsInitializingCall(false);
+        if (!cancelled) setIsInitializingCall(false);
       }
     };
 
     initCall();
 
     return () => {
-      // iife cleanup
+      cancelled = true;
+    };
+    // Use stable dependencies - NOT the full `session` object which changes every 5s on refetch
+  }, [session?.callId, session?.status, loadingSession, user?.id, isHost, isParticipant]);
+
+  // Cleanup on unmount only
+  useEffect(() => {
+    return () => {
       (async () => {
         try {
-          if (videoCall) await videoCall.leave();
-          if (chatClientInstance) await chatClientInstance.disconnectUser();
+          const refs = cleanupRef.current;
+          if (refs?.videoCall) await refs.videoCall.leave();
+          if (refs?.chatClientInstance) await refs.chatClientInstance.disconnectUser();
           await disconnectStreamClient();
         } catch (error) {
           console.error("Cleanup error:", error);
         }
       })();
+      hasInitializedRef.current = false;
+      cleanupRef.current = null;
     };
-  }, [session, loadingSession, user]);
+  }, []);
 
   return {
     streamClient,

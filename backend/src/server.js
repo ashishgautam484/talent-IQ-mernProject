@@ -10,6 +10,7 @@ import { serve } from "inngest/express";
 import { clerkMiddleware } from "@clerk/express";
 import chatRoutes from "./routes/chatRoutes.js";
 import sessionRoutes from "./routes/sessionRoutes.js";
+import codeRoutes from "./routes/codeRoutes.js";
 
 
 const app = express();
@@ -52,6 +53,7 @@ app.use(clerkMiddleware()); // this adds auth fiels to req object: req.auth
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/chat", chatRoutes);
 app.use("/api/sessions", sessionRoutes);
+app.use("/api/code", codeRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json({ msg: "Backend running" });
