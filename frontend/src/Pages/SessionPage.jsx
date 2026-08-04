@@ -47,6 +47,7 @@ function SessionPage() {
   const [code, setCode] = useState(problemData?.starterCode?.[selectedLanguage] || "");
 
   const syncTimeoutRef = useRef(null);
+  const hasAttemptedJoinRef = useRef(false);
 
   // auto-join session if user is not already a participant and not the host
   useEffect(() => {
