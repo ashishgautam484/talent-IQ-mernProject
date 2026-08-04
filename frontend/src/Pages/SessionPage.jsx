@@ -77,15 +77,29 @@ function SessionPage() {
     if (!channel || !user?.id) return;
 
     const handleCustomEvent = (event) => {
-      if (event.type === "code_sync" && event.senderId !== user.id) {
-        if (event.code !== undefined) setCode(event.code);
-        if (event.language !== undefined) setSelectedLanguage(event.language);
+      if (event.type === "code_sync") {
+        const sender = event.senderId || event.user?.id || event.user_id;
+        if (sender && sender !== user.id) {
+          if (typeof event.code === "string") {
+            setCode(event.code);
+          }
+          if (event.language) {
+            setSelectedLanguage(event.language);
+          }
+        }
       }
     };
 
-    channel.on("custom", handleCustomEvent);
+    const sub1 = channel.on("code_sync", handleCustomEvent);
+    const sub2 = channel.on(handleCustomEvent);
+
     return () => {
-      channel.off("custom", handleCustomEvent);
+      if (sub1?.unsubscribe) sub1.unsubscribe();
+      if (sub2?.unsubscribe) sub2.unsubscribe();
+      if (typeof channel.off === "function") {
+        channel.off("code_sync", handleCustomEvent);
+        channel.off(handleCustomEvent);
+      }
     };
   }, [channel, user?.id]);
 
@@ -101,7 +115,7 @@ function SessionPage() {
           code: newCode,
           language: selectedLanguage,
           senderId: user.id,
-        });
+        }).catch((err) => console.error("Error sending code_sync:", err));
       }, 300);
     }
   };
@@ -121,7 +135,7 @@ function SessionPage() {
         code: starterCode,
         language: newLang,
         senderId: user.id,
-      });
+      }).catch((err) => console.error("Error sending code_sync lang:", err));
     }
   };
 
