@@ -46,7 +46,7 @@ function SessionPage() {
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [code, setCode] = useState(problemData?.starterCode?.[selectedLanguage] || "");
 
-  const hasAttemptedJoinRef = useRef(false);
+  const syncTimeoutRef = useRef(null);
 
   // auto-join session if user is not already a participant and not the host
   useEffect(() => {
@@ -65,12 +65,46 @@ function SessionPage() {
     if (session.status === "completed") navigate("/dashboard");
   }, [session, loadingSession, navigate]);
 
-  // update code when problem loads or changes
+  // update code when problem loads or changes (only if code is empty)
   useEffect(() => {
-    if (problemData?.starterCode?.[selectedLanguage]) {
+    if (problemData?.starterCode?.[selectedLanguage] && !code) {
       setCode(problemData.starterCode[selectedLanguage]);
     }
   }, [problemData, selectedLanguage]);
+
+  // Listen for real-time code sync events from the other participant
+  useEffect(() => {
+    if (!channel || !user?.id) return;
+
+    const handleCustomEvent = (event) => {
+      if (event.type === "code_sync" && event.senderId !== user.id) {
+        if (event.code !== undefined) setCode(event.code);
+        if (event.language !== undefined) setSelectedLanguage(event.language);
+      }
+    };
+
+    channel.on("custom", handleCustomEvent);
+    return () => {
+      channel.off("custom", handleCustomEvent);
+    };
+  }, [channel, user?.id]);
+
+  const handleCodeChange = (newCode) => {
+    setCode(newCode);
+
+    // Broadcast code change over Stream channel with 300ms debounce
+    if (channel && user?.id) {
+      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+      syncTimeoutRef.current = setTimeout(() => {
+        channel.sendEvent({
+          type: "code_sync",
+          code: newCode,
+          language: selectedLanguage,
+          senderId: user.id,
+        });
+      }, 300);
+    }
+  };
 
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
@@ -79,6 +113,16 @@ function SessionPage() {
     const starterCode = problemData?.starterCode?.[newLang] || "";
     setCode(starterCode);
     setOutput(null);
+
+    // Broadcast language change & starter code immediately
+    if (channel && user?.id) {
+      channel.sendEvent({
+        type: "code_sync",
+        code: starterCode,
+        language: newLang,
+        senderId: user.id,
+      });
+    }
   };
 
   const handleRunCode = async () => {
@@ -239,7 +283,7 @@ function SessionPage() {
                       code={code}
                       isRunning={isRunning}
                       onLanguageChange={handleLanguageChange}
-                      onCodeChange={(value) => setCode(value)}
+                      onCodeChange={handleCodeChange}
                       onRunCode={handleRunCode}
                     />
                   </Panel>
